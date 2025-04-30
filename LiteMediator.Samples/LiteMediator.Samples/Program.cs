@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 var services = new ServiceCollection();
 services.AddLiteMediator(options =>
 {
-    options.Assemblies = new[] { typeof(TestRequestHandler).Assembly };
+    options.Assemblies = [typeof(TestRequestHandler).Assembly];
 });
 
 var provider = services.BuildServiceProvider();
@@ -21,3 +21,4 @@ await foreach (var item in mediator.CreateStream(new TestStreamRequest(5)))
 {
     Console.WriteLine($"Stream item: {item}");
 }
+Console.ReadLine();

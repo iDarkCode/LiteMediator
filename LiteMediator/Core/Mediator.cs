@@ -2,6 +2,7 @@
 using LiteMediator.Behaviors;
 using LiteMediator.Exceptions;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace LiteMediator.Core;
 
@@ -14,27 +15,27 @@ public class Mediator(ServiceFactory serviceFactory) : IMediator
     private readonly ConcurrentDictionary<Type, object> _streamHandlers = [];
     private readonly ConcurrentDictionary<Type, object> _pipelineBehaviors = [];
 
-  public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
-        if (request is null) throw new ArgumentNullException(nameof(request));
-    
+        if (request is null) 
+            throw new ArgumentNullException(nameof(request));
+
         var requestType = request.GetType();
-    
-        // Obtener el handler
-        var handler = (IRequestHandler<IRequest<TResponse>, TResponse>)_requestHandlers.GetOrAdd(
+
+        var handler = _requestHandlers.GetOrAdd(
             requestType,
             static (type, factory) =>
             {
                 var handlerType = typeof(IRequestHandler<,>).MakeGenericType(type, typeof(TResponse));
-                return factory(handlerType);
+                return factory(handlerType)!;
             },
             _serviceFactory);
-    
+
         if (handler is null)
             throw new HandlerNotFoundException(requestType);
-    
-        // Obtener los behaviors
-        var behaviors = (IEnumerable<IPipelineBehavior<IRequest<TResponse>, TResponse>>)_pipelineBehaviors.GetOrAdd(
+
+        // Obtener los behaviors del pipeline
+        var behaviors = _pipelineBehaviors.GetOrAdd(
             requestType,
             static (type, factory) =>
             {
@@ -42,9 +43,10 @@ public class Mediator(ServiceFactory serviceFactory) : IMediator
                 return factory(behaviorType) ?? Enumerable.Empty<IPipelineBehavior<IRequest<TResponse>, TResponse>>();
             },
             _serviceFactory);
-    
-        return InvokePipeline((IRequest<TResponse>)request, cancellationToken, behaviors, handler);
+
+        return InvokePipelineDynamic<TResponse>(request, cancellationToken, behaviors, handler);
     }
+
 
     public async Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
     {
@@ -64,14 +66,17 @@ public class Mediator(ServiceFactory serviceFactory) : IMediator
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
+
+
     public async Task Publish(INotification notification, CancellationToken cancellationToken = default)
     {
-        if (notification is null) throw new ArgumentNullException(nameof(notification));
+        if (notification is null) 
+            throw new ArgumentNullException(nameof(notification));
 
         var notificationType = notification.GetType();
 
         var handlerType = typeof(IEnumerable<>).MakeGenericType(typeof(INotificationHandler<>).MakeGenericType(notificationType));
-        var handlers = (IEnumerable<object>)_serviceFactory(handlerType) ?? Array.Empty<object>();
+        var handlers = (IEnumerable<object>?)_serviceFactory(handlerType) ?? Array.Empty<object>();
 
         var tasks = handlers.Select(handler =>
         {
@@ -86,30 +91,47 @@ public class Mediator(ServiceFactory serviceFactory) : IMediator
     {
         if (request is null) throw new ArgumentNullException(nameof(request));
 
-        var handler = _streamHandlers.GetOrAdd(
-            request.GetType(),
-            static (requestType, factory) =>
-            {
-                var handlerType = typeof(IStreamRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
-                var resolved = factory(handlerType);
-                return resolved ?? throw new HandlerNotFoundException(requestType);
-            },
-            _serviceFactory
-        );
+        var requestType = request.GetType();
 
-       return ((dynamic)handler).Handle((dynamic)request, cancellationToken);
+        var handler = _streamHandlers.GetOrAdd(
+            requestType,
+            static (type, factory) =>
+            {
+                var handlerType = typeof(IStreamRequestHandler<,>).MakeGenericType(type, typeof(TResponse));
+                return factory(handlerType) ?? throw new HandlerNotFoundException(type);
+            },
+            _serviceFactory);
+
+        var method = handler.GetType().GetMethod("Handle")!;
+        return (IAsyncEnumerable<TResponse>)method.Invoke(handler, new object[] { request, cancellationToken })!;
     }
 
-    private Task<TResponse> InvokePipeline<TRequest, TResponse>(TRequest request,
-                CancellationToken cancellationToken,
-                IEnumerable<IPipelineBehavior<TRequest, TResponse>> behaviors,
-                IRequestHandler<TRequest, TResponse> handler) where TRequest : IRequest<TResponse>
+
+    private Task<TResponse> InvokePipeline<TRequest, TResponse>(TRequest request, CancellationToken cancellationToken,
+                                                                IEnumerable<IPipelineBehavior<TRequest, TResponse>> behaviors,
+                                                                IRequestHandler<TRequest, TResponse> handler) where TRequest : IRequest<TResponse>
     {
         return PipelineBehaviorExecutor.ExecutePipeline(
             request,
             cancellationToken,
             behaviors,
             () => handler.Handle(request, cancellationToken));
+    }
+
+    private Task<TResponse> InvokePipelineDynamic<TResponse>(object request, CancellationToken cancellationToken, object behaviors, object handler)
+    {
+        var requestType = request.GetType();
+
+        if (!typeof(IRequest<TResponse>).IsAssignableFrom(requestType))
+            throw new ArgumentException($"El tipo de request no es compatible con IRequest<{typeof(TResponse).Name}>");
+
+        // Obtener el método InvokePipeline de la clase Mediator
+        var method = typeof(Mediator)
+            .GetMethod(nameof(InvokePipeline), BindingFlags.NonPublic | BindingFlags.Instance)!
+            .MakeGenericMethod(requestType, typeof(TResponse));
+
+        // Invocar el método con los parámetros necesarios
+        return (Task<TResponse>)method.Invoke(this, new object[] { request, cancellationToken, behaviors, handler })!;
     }
 
 }

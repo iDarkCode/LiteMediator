@@ -12,8 +12,9 @@ public static class ServiceCollectionExtensions
         var options = new LiteMediatorOptions();
         configure?.Invoke(options);
 
-        services.Add(new ServiceDescriptor(typeof(IMediator), typeof(Mediator), options.Lifetime));
-
+        services.Add(new ServiceDescriptor(typeof(ServiceFactory), provider => new ServiceFactory(provider.GetService),
+            options.Lifetime)); services.Add(new ServiceDescriptor(typeof(IMediator), typeof(Mediator), options.Lifetime));
+        
         // Registramos los handlers encontrados en los assemblies
         foreach (var assembly in options.Assemblies)
         {
@@ -53,7 +54,7 @@ public static class ServiceCollectionExtensions
 public class LiteMediatorOptions
 {
     public ServiceLifetime Lifetime { get; set; } = ServiceLifetime.Scoped;
-    public Assembly[] Assemblies { get; set; } = Array.Empty<Assembly>();
+    public Assembly[] Assemblies { get; set; } = [];
 
     internal List<Type> OpenBehaviors { get; } = new();
 
