@@ -1,0 +1,23 @@
+﻿using LiteMediator.Abstractions;
+using LiteMediator.Extensions;
+using LiteMediator.Samples;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddLiteMediator(options =>
+{
+    options.Assemblies = new[] { typeof(TestRequestHandler).Assembly };
+});
+
+var provider = services.BuildServiceProvider();
+var mediator = provider.GetRequiredService<IMediator>();
+
+var response = await mediator.Send(new TestRequest("Hello World"));
+Console.WriteLine(response);
+
+await mediator.Publish(new TestNotification("Test Event"));
+
+await foreach (var item in mediator.CreateStream(new TestStreamRequest(5)))
+{
+    Console.WriteLine($"Stream item: {item}");
+}
