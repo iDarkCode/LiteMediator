@@ -39,7 +39,8 @@ public class Mediator(ServiceFactory serviceFactory) : IMediator
             requestType,
             static (type, factory) =>
             {
-                var behaviorType = typeof(IEnumerable<>).MakeGenericType(typeof(IPipelineBehavior<,>).MakeGenericType(type, typeof(TResponse)));
+                var behaviorType = typeof(IEnumerable<>).MakeGenericType(typeof(IPipelineBehavior<,>)
+                                                        .MakeGenericType(type, typeof(TResponse)));
                 return factory(behaviorType) ?? Enumerable.Empty<IPipelineBehavior<IRequest<TResponse>, TResponse>>();
             },
             _serviceFactory);

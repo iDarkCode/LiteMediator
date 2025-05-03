@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteMediator", "LiteMediator\LiteMediator.csproj", "{707E39AE-9E33-43F1-8711-7E7DF745ECA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiteMediator", "LiteMediator\LiteMediator.csproj", "{707E39AE-9E33-43F1-8711-7E7DF745ECA3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{52AD8F4C-6996-4CF2-B98E-6A9B4ED3DA42}"
 EndProject
@@ -11,9 +11,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C33B2568
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1264A8BC-A650-4342-8F90-97A7F1C0DD02}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteMediator.Tests", "LiteMediator.Tests\LiteMediator.Tests\LiteMediator.Tests.csproj", "{EACC72AD-0DAD-4E0C-9E3F-51202D6CCA35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiteMediator.Tests", "LiteMediator.Tests\LiteMediator.Tests\LiteMediator.Tests.csproj", "{EACC72AD-0DAD-4E0C-9E3F-51202D6CCA35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteMediator.Samples", "LiteMediator.Samples\LiteMediator.Samples\LiteMediator.Samples.csproj", "{9DFB311A-C4F9-4967-B16D-66F8CF806BEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiteMediator.Samples", "LiteMediator.Samples\LiteMediator.Samples\LiteMediator.Samples.csproj", "{9DFB311A-C4F9-4967-B16D-66F8CF806BEF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

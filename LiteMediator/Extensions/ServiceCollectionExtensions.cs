@@ -30,8 +30,7 @@ public static class ServiceCollectionExtensions
 
                     if (def == typeof(IRequestHandler<,>) ||
                         def == typeof(INotificationHandler<>) ||
-                        def == typeof(IStreamRequestHandler<,>) ||
-                        def == typeof(IPipelineBehavior<,>))
+                        def == typeof(IStreamRequestHandler<,>))
                     {
                         services.AddScoped(iface, type);
                     }
@@ -42,7 +41,7 @@ public static class ServiceCollectionExtensions
         // Registramos los behaviors
         foreach (var openBehavior in options.OpenBehaviors)
         {
-            services.AddScoped(typeof(IPipelineBehavior<,>), openBehavior);
+            services.AddTransient(typeof(IPipelineBehavior<,>), openBehavior);
         }
 
         return services;
